@@ -324,7 +324,7 @@ static const struct i2c_device_id am2320_id[] = {
 };
 MODULE_DEVICE_TABLE(i2c, am2320_id);
 
-static const struct of_device_id am2320_of_match[] = {
+static const struct of_device_id __maybe_unused am2320_of_match[] = {
 	{ .compatible = "aosong,am2320" },
 	{ .compatible = "aosong,am2321" },
 	{ .compatible = "aosong,am2322" },
@@ -335,7 +335,7 @@ MODULE_DEVICE_TABLE(of, am2320_of_match);
 static struct i2c_driver am2320_driver = {
 	.driver = {
 		.name = "am2320",
-		.of_match_table = am2320_of_match,
+		.of_match_table = of_match_ptr(am2320_of_match),
 	},
 	.probe      = am2320_probe,
 	.id_table   = am2320_id,
