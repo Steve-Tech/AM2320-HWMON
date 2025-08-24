@@ -74,16 +74,13 @@ static int am2320_polltime_expired(struct am2320_data *data)
 }
 
 /*
- * am2320_crc16() - check crc of the sensor's measurements
- * @raw_data: data frame received from sensor (including crc as the last byte)
+ * am2320_crc16() - calculate crc of the sensor's measurements
+ * @raw_data: data frame received from sensor, excluding the crc
  * @count: size of the data frame
- * Return: 0 if successful, 1 if not
+ * Return: the calculated crc
  */
 static int am2320_crc16(u8 *raw_data, int count)
 {
-	u16 data_crc = raw_data[count - 2] << 8 | raw_data[count - 1];
-	count -= 2; // Exclude CRC bytes from the count
-
 	u16 crc = 0xFFFF;
 	while (count--) {
 		crc ^= *raw_data++;
@@ -96,7 +93,7 @@ static int am2320_crc16(u8 *raw_data, int count)
 		}
 	}
 
-	return crc == data_crc;
+	return crc;
 }
 
 /*
@@ -108,7 +105,7 @@ static int am2320_read_values(struct am2320_data *data)
 {
 	const u8 cmd_wake[] = { 0x00 };
 	const u8 cmd_meas[] = { AM2320_FUNC_READ, 0x00, AM2320_MEAS_SIZE };
-	int temp, humid;
+	int temp, humid, crc;
 	int res;
 	u8 raw_data[AM2320_FRAME_SIZE];
 	struct i2c_client *client = data->client;
@@ -120,7 +117,7 @@ static int am2320_read_values(struct am2320_data *data)
 		return 0;
 	}
 
-	/* 
+	/*
 	 * Sensor goes to sleep to reduce self-heating.
 	 * Wake it up by sending a dummy command.
 	 * This may return an error, that's fine.
@@ -153,7 +150,8 @@ static int am2320_read_values(struct am2320_data *data)
 		return -EIO;
 	}
 
-	if (am2320_crc16(raw_data, AM2320_FRAME_SIZE)) {
+	crc = get_unaligned_le16(&raw_data[AM2320_FRAME_SIZE - 2]);
+	if (crc != am2320_crc16(raw_data, AM2320_FRAME_SIZE - 2)) {
 		mutex_unlock(&data->lock);
 		return -EIO;
 	}
