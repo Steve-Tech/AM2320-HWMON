@@ -3,6 +3,16 @@
 This is a Linux HWMON driver for the AM2320, AM2321, and AM2322 temperature and
 humidity sensors, connected via I2C.
 
+Sensors Example:
+
+```text
+$ sensors am2320-*
+am2320-i2c-1-5c
+Adapter: Synopsys DesignWare I2C adapter
+temp1:        +24.7°C
+humidity1:     43.5 %RH
+```
+
 ## Installation
 
 This will install the driver as a DKMS module, which will allow it to be
@@ -18,11 +28,17 @@ echo am2320 0x5c | sudo tee /sys/class/i2c-dev/i2c-1/device/new_device
 
 If you are using a Raspberry Pi, you can install the device tree overlay to
 automatically load the driver at boot time. You may need to adjust the I2C bus
-target (`target = <&i2c1>;`) in the `am2320.dts` on other platforms.
+target (`target = <&i2c1>;`) in `am2320.dts` on other platforms.
+
+This will also automatically add `dtoverlay=am2320` to your
+`/boot/firmware/config.txt` file.
 
 ```sh
 sudo make dtoverlay
 ```
+
+If you haven't run the modprobe command yet, you can now use dtoverlay to load
+the driver: `sudo dtoverlay am2320`.
 
 ## Uninstallation
 
