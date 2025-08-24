@@ -13,6 +13,7 @@
 #include <linux/i2c.h>
 #include <linux/ktime.h>
 #include <linux/module.h>
+#include <linux/unaligned.h>
 
 #define AM2320_MEAS_SIZE	4
 #define AM2320_FRAME_SIZE	AM2320_MEAS_SIZE + 4
@@ -158,8 +159,8 @@ static int am2320_read_values(struct am2320_data *data)
 	}
 
 	/* Parse the data */
-	humid = (u16)raw_data[2] << 8u | raw_data[3];
-	temp = (u16)raw_data[4] << 8u | raw_data[5];
+	humid = get_unaligned_be16(&raw_data[2]);
+	temp  = get_unaligned_be16(&raw_data[4]);
 
 	/* Bit 15 indicates a negative temperature */
 	if (temp & 0x8000)
@@ -319,13 +320,24 @@ static int am2320_probe(struct i2c_client *client)
 
 static const struct i2c_device_id am2320_id[] = {
 	{ "am2320" },
+	{ "am2321" },
+	{ "am2322" },
 	{ },
 };
 MODULE_DEVICE_TABLE(i2c, am2320_id);
 
+static const struct of_device_id am2320_of_match[] = {
+	{ .compatible = "aosong,am2320" },
+	{ .compatible = "aosong,am2321" },
+	{ .compatible = "aosong,am2322" },
+	{ },
+};
+MODULE_DEVICE_TABLE(of, am2320_of_match);
+
 static struct i2c_driver am2320_driver = {
 	.driver = {
 		.name = "am2320",
+		.of_match_table = am2320_of_match,
 	},
 	.probe      = am2320_probe,
 	.id_table   = am2320_id,
@@ -335,5 +347,4 @@ module_i2c_driver(am2320_driver);
 
 MODULE_AUTHOR("Stephen Horvath <s.horvath@outlook.com.au>");
 MODULE_DESCRIPTION("AM2320 Temperature and Humidity sensor driver");
-MODULE_VERSION("1.0");
 MODULE_LICENSE("GPL v2");

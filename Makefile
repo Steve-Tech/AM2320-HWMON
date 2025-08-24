@@ -9,6 +9,8 @@ DKMS_ROOT_PATH=/usr/src/$(DRIVER)-$(VERSION)
 
 KERNEL_BUILD=/lib/modules/`uname -r`/build
 
+.PHONY: all modules clean dkms dkms_clean dtoverlay dtoverlay_clean
+
 all: modules
 
 modules:
@@ -30,3 +32,12 @@ dkms:
 dkms_clean:
 	@dkms remove $(DKMS_FLAGS) --all
 	@rm -rf $(DKMS_ROOT_PATH)
+
+dtoverlay:
+	@dtc -@ -I dts -O dtb -o am2320.dtbo am2320.dts
+	@cp am2320.dtbo /boot/overlays/
+	@echo "dtoverlay=am2320" >> /boot/firmware/config.txt
+
+dtoverlay_clean:
+	@rm /boot/overlays/am2320.dtbo
+	@sed -i s/^dtoverlay=am2320//g /boot/firmware/config.txt
